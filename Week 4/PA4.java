@@ -14,7 +14,7 @@ class Node implements Comparable<Node>{
     }
 
     @Override
-    public int compareTo(Node n){ // n의 이름이 호출한 이름보다 앞에있으면
+    public int compareTo(Node n){ 
         if(n.name.compareTo(this.name) > 0)
             return -1;
         else
