@@ -1,20 +1,17 @@
-package Algosim;
+package pa7;
 
 import java.io.*;
 import java.util.*;
 
-//insertVertex 에서 list의 맨처음을 각 정점으로 하는 node로 구성했다.
-class GraphNode {
+class GraphNode implements Comparable<GraphNode> {
     String city;
     GraphNode link, pre;
     double longitude, latitude, distance, dis = -1;
     boolean check = false;
 
     public GraphNode(String city, double longitude, double latitude, double distance) {
-        this.city = city;
-        this.longitude = longitude;
-        this.distance = distance;
-        this.latitude = latitude;
+        this.city = city; this.longitude = longitude;
+        this.distance = distance; this.latitude = latitude;
         this.link = null;
     }
 
@@ -25,19 +22,27 @@ class GraphNode {
     public double getLatitude() {
         return latitude;
     }
+
+    @Override
+    public int compareTo(GraphNode target) {
+        return (int) (this.dis - target.dis);
+    }
 }
 
 public class Graph {
-    private static ArrayList<GraphNode> list;
+    private static GraphNode[] list;    //인접리스트의 배열
+    private static int size = 0;        //인접리스트배열의 크기
+    //private static int heapSize = 0;
     static Scanner sc = new Scanner(System.in);
 
     public Graph() {
-        list = new ArrayList<>();
+        list = new GraphNode[14378];
+        size = 0;
     }
 
     void readFile() {
         String fileName1 = "alabama.txt";
-        String fileName2 = "roadlist.txt";
+        String fileName2 = "roadList2.txt";
         String filePath = Graph.class.getResource("").getPath();
         File file1 = new File(filePath + fileName1);
         File file2 = new File(filePath + fileName2);
@@ -84,11 +89,9 @@ public class Graph {
                 case "Dijkstra":
                     String ct1, ct2; //두 지점
 
-                    System.out.print("출발 도시 입력: ");
-                    ct1 = sc.nextLine();
-                    System.out.print("목적지 도시 입력: ");
-                    ct2 = sc.nextLine();   // 두지점 입력
-
+                    System.out.print("출발 도시 입력: "); ct1 = sc.nextLine();
+                    System.out.print("목적지 도시 입력: "); ct2 = sc.nextLine();
+                    // 두지점 입력
                     dijkstra(ct1, ct2);
                     reset();
                     break;
@@ -108,8 +111,8 @@ public class Graph {
         if (y == null) return; //city2의 위도,경도 도시 이름을 불러오기 위한 노드
 
         double distance = calDistance(x.getLatitude(), x.getLongitude(), y.getLatitude(), y.getLongitude());
-        GraphNode newNode1 = new GraphNode(city2, y.getLongitude(), y.getLatitude(), distance); //인접리스트에 연결한 node 만듬
-        GraphNode newNode2 = new GraphNode(city1, x.getLongitude(), x.getLatitude(), distance); //인접리스트에 연결한 node 만듬
+        GraphNode newNode1 = new GraphNode(city2, y.getLatitude(), y.getLongitude(), distance); //인접리스트에 연결한 node 만듬
+        GraphNode newNode2 = new GraphNode(city1, x.getLatitude(), x.getLongitude(), distance); //인접리스트에 연결한 node 만듬
 
         if (x.link == null)  //제일 처음 연결
             x.link = newNode1;
@@ -131,12 +134,13 @@ public class Graph {
         double b1 = Double.parseDouble(st[1]);
         double b2 = Double.parseDouble(st[2]);
         GraphNode newNode = new GraphNode(st[0], b1, b2, 0); //city 와 경도,위도를 이용하여 정점 만듬
-        newNode.link = null;
-        list.add(newNode);
+        newNode.link = list[size];
+        list[size] = newNode;  //정점 삽임
+        size++;                //인접 리스트 크기 ++
     }
 
     private static void add(String str) {   //두번쨰 들어온 입력 데이터 값으로 Node을 만듬
-        String[] st = str.split("\t");
+        String st[] = str.split("\t");
         GraphInsert(st[0], st[1]);   //연결한 도시 정보를 넘김
     }
 
@@ -172,9 +176,9 @@ public class Graph {
     private static void dfsAll(GraphNode x) {   //dfs all
         printVertex(x.city);
         dfs(x);
-        for (int i = 0; i < list.size(); i++)
-            if (!list.get(i).check)
-                dfs(list.get(i));
+        for (int i = 0; i < size; i++)
+            if (!list[i].check)
+                dfs(list[i]);
     }
 
     private static void dfs(GraphNode x) {  //dfs
@@ -191,9 +195,9 @@ public class Graph {
     }
 
     private static void dijkstra(String ct1, String ct2) {
-        for (int i = 0; i < list.size(); i++) {
-            list.get(i).dis = 1000000;
-            list.get(i).pre = null;
+        for (int i = 0; i < size; i++) {
+            list[i].dis = 1000000;
+            list[i].pre = null;
         }
 
         GraphNode src = graphSearch(ct1);
@@ -246,11 +250,10 @@ public class Graph {
     }
 
     private static GraphNode graphSearch(String name) { // 지점 이름으로 인접리스트 배열 요소 반환
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).city.equals(name))
-                return list.get(i);
-        }
-        return null;
+        for (int i = 0; i < size; i++)
+            if (name.equals(list[i].city))   //찾을시 GraphNode 반환
+                return list[i];
+        return null;    //못 찾을시 null 반환
     }
 
     private static void printVertex(String name) {
@@ -263,8 +266,8 @@ public class Graph {
     }
 
     private static void reset() {    //방문 체크 reset 해줌
-        for (int i = 0; i < list.size(); i++)
-            list.get(i).check = false;
+        for (int i = 0; i < size; i++)
+            list[i].check = false;
     }
 
     // 매개변수는 첫번째 지점의 위도(lat1), 경도(lon1), 두번째 지점의 위도(lat2), 경도(lon2) 순서이다.
@@ -291,6 +294,7 @@ public class Graph {
     private static double rad2deg(double rad) {
         return (double) (rad * (double) 180 / Math.PI);
     }
+
 }
 
 class Main {
@@ -300,5 +304,3 @@ class Main {
         ph.readCommand();
     }
 }
-
-
